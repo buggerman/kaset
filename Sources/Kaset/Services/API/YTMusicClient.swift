@@ -13,7 +13,6 @@ enum PaginatedContentType: String, Hashable {
     case charts = "FEmusic_charts"
     case moodsAndGenres = "FEmusic_moods_and_genres"
     case newReleases = "FEmusic_new_releases"
-    case podcasts = "FEmusic_podcasts"
     case history = "FEmusic_history"
 
     /// Display name for logging.
@@ -24,7 +23,6 @@ enum PaginatedContentType: String, Hashable {
         case .charts: "charts"
         case .moodsAndGenres: "moods and genres"
         case .newReleases: "new releases"
-        case .podcasts: "podcasts"
         case .history: "history"
         }
     }
@@ -226,55 +224,6 @@ final class YTMusicClient: YTMusicClientProtocol {
         self.hasMoreSections(for: .history)
     }
 
-    /// Fetches the podcasts page content (initial sections only for fast display).
-    func getPodcasts() async throws -> [PodcastSection] {
-        self.logger.info("Fetching podcasts page")
-
-        let body: [String: Any] = [
-            "browseId": PaginatedContentType.podcasts.rawValue,
-        ]
-
-        let data = try await request("browse", body: body, ttl: APICache.TTL.home)
-        let sections = PodcastParser.parseDiscovery(data)
-
-        // Store continuation token for progressive loading
-        let token = HomeResponseParser.extractContinuationToken(from: data)
-        self.continuationTokens[.podcasts] = token
-
-        let hasMore = token != nil
-        self.logger.info("Podcasts page loaded: \(sections.count) initial sections, hasMore: \(hasMore)")
-        return sections
-    }
-
-    /// Fetches the next batch of podcasts sections via continuation.
-    func getPodcastsContinuation() async throws -> [PodcastSection]? {
-        guard let token = continuationTokens[.podcasts] else {
-            self.logger.debug("No podcasts continuation token available")
-            return nil
-        }
-
-        self.logger.info("Fetching podcasts continuation")
-
-        do {
-            let continuationData = try await requestContinuation(token)
-            let additionalSections = PodcastParser.parseContinuation(continuationData)
-            self.continuationTokens[.podcasts] = HomeResponseParser.extractContinuationTokenFromContinuation(continuationData)
-            let hasMore = self.continuationTokens[.podcasts] != nil
-
-            self.logger.info("Podcasts continuation loaded: \(additionalSections.count) sections, hasMore: \(hasMore)")
-            return additionalSections
-        } catch {
-            self.logger.warning("Failed to fetch podcasts continuation: \(error.localizedDescription)")
-            self.continuationTokens[.podcasts] = nil
-            throw error
-        }
-    }
-
-    /// Whether more podcasts sections are available to load.
-    var hasMorePodcastsSections: Bool {
-        self.hasMoreSections(for: .podcasts)
-    }
-
     /// Fetches details for a podcast show including its episodes.
     func getPodcastShow(browseId: String) async throws -> PodcastShowDetail {
         self.logger.info("Fetching podcast show: \(browseId)")
@@ -365,6 +314,9 @@ final class YTMusicClient: YTMusicClientProtocol {
         static let communityPlaylists = "EgeKAQQoAEABagwQDhAKEAMQBBAJEAU="
         /// Podcasts (podcast shows)
         static let podcasts = "EgWKAQJQAWoQEBAQCRAEEAMQBRAKEBUQEQ%3D%3D"
+        /// Episodes (podcast episodes, including live-radio re-broadcasts).
+        /// Captured from the YouTube Music search chip cloud.
+        static let episodes = "EgWKAQJIAWoSEBAQFRAFEAoQAxAEEAkQERAO"
     }
 
     /// Continuation token for filtered search pagination.
@@ -480,6 +432,32 @@ final class YTMusicClient: YTMusicClientProtocol {
             artists: [],
             playlists: [],
             podcastShows: podcastShows,
+            continuationToken: token
+        )
+    }
+
+    /// Searches for podcast episodes only — including live-radio episodes,
+    /// which YouTube Music classifies under `MUSIC_VIDEO_TYPE_PODCAST_EPISODE`.
+    func searchEpisodes(query: String) async throws -> SearchResponse {
+        self.logger.info("Searching episodes only for: \(query)")
+
+        let body: [String: Any] = [
+            "query": query,
+            "params": SearchFilterParams.episodes,
+        ]
+
+        let data = try await request("search", body: body, ttl: APICache.TTL.search)
+        let (episodes, token) = SearchResponseParser.parseEpisodesOnly(data)
+        self.searchContinuationToken = token
+
+        self.logger.info("Episodes search found \(episodes.count) episodes, hasMore: \(token != nil)")
+        return SearchResponse(
+            songs: [],
+            albums: [],
+            artists: [],
+            playlists: [],
+            podcastShows: [],
+            episodes: episodes,
             continuationToken: token
         )
     }

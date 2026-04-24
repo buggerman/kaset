@@ -136,6 +136,9 @@ enum ShareContextMenu {
             Self.menuItem(for: artist)
         case let .podcastShow(show):
             Self.menuItem(for: show)
+        case .episode:
+            // Episode shares fall back to the show view; no direct share target.
+            EmptyView()
         }
     }
 

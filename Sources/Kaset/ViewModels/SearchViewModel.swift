@@ -72,6 +72,7 @@ final class SearchViewModel {
         case featuredPlaylists = "Featured playlists"
         case communityPlaylists = "Community playlists"
         case podcasts = "Podcasts"
+        case episodes = "Episodes"
 
         var id: String {
             rawValue
@@ -93,6 +94,8 @@ final class SearchViewModel {
                 String(localized: "Community playlists")
             case .podcasts:
                 String(localized: "Podcasts")
+            case .episodes:
+                String(localized: "Episodes")
             }
         }
     }
@@ -112,6 +115,8 @@ final class SearchViewModel {
             self.results.playlists.map { .playlist($0) }
         case .podcasts:
             self.results.podcastShows.map { .podcastShow($0) }
+        case .episodes:
+            self.results.episodes.map { .episode($0) }
         }
     }
 
@@ -271,6 +276,8 @@ final class SearchViewModel {
                 try await self.client.searchCommunityPlaylists(query: currentQuery)
             case .podcasts:
                 try await self.client.searchPodcasts(query: currentQuery)
+            case .episodes:
+                try await self.client.searchEpisodes(query: currentQuery)
             }
 
             // Check cancellation and query change before updating results
@@ -317,6 +324,7 @@ final class SearchViewModel {
                 artists: self.results.artists + continuation.artists,
                 playlists: self.results.playlists + continuation.playlists,
                 podcastShows: self.results.podcastShows + continuation.podcastShows,
+                episodes: self.results.episodes + continuation.episodes,
                 continuationToken: continuation.continuationToken
             )
 

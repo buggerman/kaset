@@ -9,6 +9,7 @@ struct SearchResponse {
     let artists: [Artist]
     let playlists: [Playlist]
     let podcastShows: [PodcastShow]
+    let episodes: [PodcastEpisode]
     /// Continuation token for loading more results (only present for filtered searches).
     let continuationToken: String?
 
@@ -20,12 +21,18 @@ struct SearchResponse {
         items.append(contentsOf: self.artists.map { .artist($0) })
         items.append(contentsOf: self.playlists.map { .playlist($0) })
         items.append(contentsOf: self.podcastShows.map { .podcastShow($0) })
+        items.append(contentsOf: self.episodes.map { .episode($0) })
         return items
     }
 
     /// Whether the search returned any results.
     var isEmpty: Bool {
-        self.songs.isEmpty && self.albums.isEmpty && self.artists.isEmpty && self.playlists.isEmpty && self.podcastShows.isEmpty
+        self.songs.isEmpty
+            && self.albums.isEmpty
+            && self.artists.isEmpty
+            && self.playlists.isEmpty
+            && self.podcastShows.isEmpty
+            && self.episodes.isEmpty
     }
 
     /// Whether more results are available to load.
@@ -33,7 +40,15 @@ struct SearchResponse {
         self.continuationToken != nil
     }
 
-    static let empty = SearchResponse(songs: [], albums: [], artists: [], playlists: [], podcastShows: [], continuationToken: nil)
+    static let empty = SearchResponse(
+        songs: [],
+        albums: [],
+        artists: [],
+        playlists: [],
+        podcastShows: [],
+        episodes: [],
+        continuationToken: nil
+    )
 
     /// Creates a SearchResponse without continuation token (backward compatibility).
     init(songs: [Song], albums: [Album], artists: [Artist], playlists: [Playlist]) {
@@ -42,6 +57,7 @@ struct SearchResponse {
         self.artists = artists
         self.playlists = playlists
         self.podcastShows = []
+        self.episodes = []
         self.continuationToken = nil
     }
 
@@ -52,6 +68,7 @@ struct SearchResponse {
         self.artists = artists
         self.playlists = playlists
         self.podcastShows = []
+        self.episodes = []
         self.continuationToken = continuationToken
     }
 
@@ -69,6 +86,26 @@ struct SearchResponse {
         self.artists = artists
         self.playlists = playlists
         self.podcastShows = podcastShows
+        self.episodes = []
+        self.continuationToken = continuationToken
+    }
+
+    /// Designated initializer covering every result type including episodes.
+    init(
+        songs: [Song],
+        albums: [Album],
+        artists: [Artist],
+        playlists: [Playlist],
+        podcastShows: [PodcastShow],
+        episodes: [PodcastEpisode],
+        continuationToken: String?
+    ) {
+        self.songs = songs
+        self.albums = albums
+        self.artists = artists
+        self.playlists = playlists
+        self.podcastShows = podcastShows
+        self.episodes = episodes
         self.continuationToken = continuationToken
     }
 }
@@ -82,6 +119,7 @@ enum SearchResultItem: Identifiable {
     case artist(Artist)
     case playlist(Playlist)
     case podcastShow(PodcastShow)
+    case episode(PodcastEpisode)
 
     var id: String {
         switch self {
@@ -95,6 +133,8 @@ enum SearchResultItem: Identifiable {
             "playlist-\(playlist.id)"
         case let .podcastShow(show):
             "podcast-\(show.id)"
+        case let .episode(episode):
+            "episode-\(episode.id)"
         }
     }
 
@@ -110,6 +150,8 @@ enum SearchResultItem: Identifiable {
             playlist.title
         case let .podcastShow(show):
             show.title
+        case let .episode(episode):
+            episode.title
         }
     }
 
@@ -133,6 +175,9 @@ enum SearchResultItem: Identifiable {
             return stripped.isEmpty ? nil : stripped
         case let .podcastShow(show):
             return show.author
+        case let .episode(episode):
+            // Prefer the show name; fall back to the relative date.
+            return episode.showTitle ?? episode.publishedDate
         }
     }
 
@@ -148,6 +193,8 @@ enum SearchResultItem: Identifiable {
             playlist.thumbnailURL
         case let .podcastShow(show):
             show.thumbnailURL
+        case let .episode(episode):
+            episode.thumbnailURL
         }
     }
 
@@ -163,6 +210,8 @@ enum SearchResultItem: Identifiable {
             "Playlist"
         case .podcastShow:
             "Podcast"
+        case .episode:
+            "Episode"
         }
     }
 
@@ -171,6 +220,8 @@ enum SearchResultItem: Identifiable {
         switch self {
         case let .song(song):
             song.videoId
+        case let .episode(episode):
+            episode.id
         default:
             nil
         }

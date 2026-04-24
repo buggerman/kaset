@@ -105,6 +105,9 @@ enum FavoritesContextMenu {
             Self.menuItem(for: artist, manager: manager)
         case let .podcastShow(show):
             Self.menuItem(for: show, manager: manager)
+        case .episode:
+            // Episodes aren't favoritable — no FavoriteItem variant exists for them yet.
+            EmptyView()
         }
     }
 }
