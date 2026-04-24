@@ -48,6 +48,12 @@ final class PlayerService: NSObject, PlayerServiceProtocol {
     /// Currently playing track.
     var currentTrack: Song?
 
+    /// Set when the current playback was started from an artist-page episode
+    /// (including live radio streams). Cleared by `play(song:)` and
+    /// `play(videoId:)` so regular playback never reports as live.
+    /// Read via `isCurrentItemLive` (defined in `PlayerService+Episodes.swift`).
+    var currentEpisode: ArtistEpisode?
+
     /// Whether playback is active.
     var isPlaying: Bool {
         self.state.isPlaying
@@ -377,6 +383,7 @@ final class PlayerService: NSObject, PlayerServiceProtocol {
         self.logger.debug("play() called with videoId: \(videoId)")
         self.logger.info("Playing video: \(videoId)")
         self.clearRestoredPlaybackSessionState()
+        self.currentEpisode = nil
         self.state = .loading
         self.songNearingEnd = false
         self.shouldSuppressAutoplayAfterQueueEnd = false
@@ -422,6 +429,7 @@ final class PlayerService: NSObject, PlayerServiceProtocol {
         self.logger.info("Playing song: \(song.title)")
         self.logger.debug("Web load strategy: \(String(describing: webLoadStrategy))")
         self.clearRestoredPlaybackSessionState()
+        self.currentEpisode = nil
         // Brief `.loading` until the observer reports playback; in-place restarts may flash loading briefly.
         self.state = .loading
         self.songNearingEnd = false
