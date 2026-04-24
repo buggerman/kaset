@@ -23,6 +23,10 @@ jobs:
   release:
     runs-on: macos-26
     timeout-minutes: 60
+    env:
+      # Job-level env evaluated at job start (secrets can't be used directly
+      # in step-level `if:` expressions — GitHub rejects the workflow).
+      PUBLISH_HOMEBREW: ${{ secrets.HOMEBREW_REPO_TOKEN != '' }}
 
     steps:
       - name: Checkout code
@@ -282,7 +286,7 @@ jobs:
           fi
 
       - name: Checkout Homebrew tap repo
-        if: ${{ secrets.HOMEBREW_REPO_TOKEN != '' }}
+        if: env.PUBLISH_HOMEBREW == 'true'
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
         with:
           repository: ${{ github.repository_owner }}/homebrew-repo
@@ -291,7 +295,7 @@ jobs:
           fetch-depth: 0
 
       - name: Update Homebrew Cask
-        if: ${{ secrets.HOMEBREW_REPO_TOKEN != '' }}
+        if: env.PUBLISH_HOMEBREW == 'true'
         run: |
           TAG="${{ steps.artifact.outputs.tag }}"
           VERSION="${TAG#v}"
