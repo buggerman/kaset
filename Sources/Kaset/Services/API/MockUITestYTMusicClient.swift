@@ -26,10 +26,6 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
         false
     }
 
-    var hasMorePodcastsSections: Bool {
-        false
-    }
-
     var hasMoreHistorySections: Bool {
         false
     }
@@ -113,15 +109,6 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
     }
 
     func getHistoryContinuation() async throws -> [HomeSection]? {
-        nil
-    }
-
-    func getPodcasts() async throws -> [PodcastSection] {
-        try? await Task.sleep(for: .milliseconds(100))
-        return []
-    }
-
-    func getPodcastsContinuation() async throws -> [PodcastSection]? {
         nil
     }
 
@@ -224,6 +211,19 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
             artists: [],
             playlists: [],
             podcastShows: [],
+            continuationToken: nil
+        )
+    }
+
+    func searchEpisodes(query _: String) async throws -> SearchResponse {
+        try? await Task.sleep(for: .milliseconds(100))
+        return SearchResponse(
+            songs: [],
+            albums: [],
+            artists: [],
+            playlists: [],
+            podcastShows: [],
+            episodes: [],
             continuationToken: nil
         )
     }

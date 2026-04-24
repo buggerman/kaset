@@ -30,8 +30,6 @@ final class MockYTMusicClient: YTMusicClientProtocol { // swiftlint:disable:this
     var historyResponse: HomeResponse = .init(sections: [])
     var historyResponseSequence: [HomeResponse] = []
     var historyContinuationSections: [[HomeSection]] = []
-    var podcastsSections: [PodcastSection] = []
-    var podcastsContinuationSections: [[PodcastSection]] = []
     var searchResponse: SearchResponse = .empty
     var searchContinuationResponses: [SearchResponse] = []
     var searchSuggestions: [SearchSuggestion] = []
@@ -74,7 +72,6 @@ final class MockYTMusicClient: YTMusicClientProtocol { // swiftlint:disable:this
     private var _moodsAndGenresContinuationIndex = 0
     private var _newReleasesContinuationIndex = 0
     private var _historyContinuationIndex = 0
-    private var _podcastsContinuationIndex = 0
     private var _likedSongsContinuationIndex = 0
     private var _playlistContinuationIndex = 0
     private var _currentPlaylistId: String?
@@ -101,10 +98,6 @@ final class MockYTMusicClient: YTMusicClientProtocol { // swiftlint:disable:this
 
     var hasMoreHistorySections: Bool {
         self._historyContinuationIndex < self.historyContinuationSections.count
-    }
-
-    var hasMorePodcastsSections: Bool {
-        self._podcastsContinuationIndex < self.podcastsContinuationSections.count
     }
 
     var hasMoreLikedSongs: Bool {
@@ -288,22 +281,6 @@ final class MockYTMusicClient: YTMusicClientProtocol { // swiftlint:disable:this
         return sections
     }
 
-    func getPodcasts() async throws -> [PodcastSection] {
-        self._podcastsContinuationIndex = 0
-        if let error = shouldThrowError { throw error }
-        return self.podcastsSections
-    }
-
-    func getPodcastsContinuation() async throws -> [PodcastSection]? {
-        if let error = shouldThrowError { throw error }
-        guard self._podcastsContinuationIndex < self.podcastsContinuationSections.count else {
-            return nil
-        }
-        let sections = self.podcastsContinuationSections[self._podcastsContinuationIndex]
-        self._podcastsContinuationIndex += 1
-        return sections
-    }
-
     func getPodcastShow(browseId _: String) async throws -> PodcastShowDetail {
         if let error = shouldThrowError { throw error }
         return PodcastShowDetail(
@@ -440,6 +417,23 @@ final class MockYTMusicClient: YTMusicClientProtocol { // swiftlint:disable:this
         )
     }
 
+    func searchEpisodes(query: String) async throws -> SearchResponse {
+        self.searchCalled = true
+        self.searchQueries.append(query)
+        self._searchContinuationIndex = 0
+        if let error = shouldThrowError { throw error }
+        let hasMore = !self.searchContinuationResponses.isEmpty
+        return SearchResponse(
+            songs: [],
+            albums: [],
+            artists: [],
+            playlists: [],
+            podcastShows: [],
+            episodes: self.searchResponse.episodes,
+            continuationToken: hasMore ? "mock-token" : nil
+        )
+    }
+
     func getSearchContinuation() async throws -> SearchResponse? {
         if let error = shouldThrowError { throw error }
         guard self._searchContinuationIndex < self.searchContinuationResponses.count else {
@@ -463,7 +457,6 @@ final class MockYTMusicClient: YTMusicClientProtocol { // swiftlint:disable:this
         self._moodsAndGenresContinuationIndex = 0
         self._newReleasesContinuationIndex = 0
         self._historyContinuationIndex = 0
-        self._podcastsContinuationIndex = 0
         self._likedSongsContinuationIndex = 0
         self._playlistContinuationIndex = 0
         self._searchContinuationIndex = 0
@@ -782,7 +775,6 @@ final class MockYTMusicClient: YTMusicClientProtocol { // swiftlint:disable:this
         self._moodsAndGenresContinuationIndex = 0
         self._newReleasesContinuationIndex = 0
         self._historyContinuationIndex = 0
-        self._podcastsContinuationIndex = 0
         self._likedSongsContinuationIndex = 0
         self._playlistContinuationIndex = 0
         self._currentPlaylistId = nil

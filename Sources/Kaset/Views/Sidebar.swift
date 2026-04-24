@@ -46,11 +46,6 @@ struct Sidebar: View {
                             Label(NavigationItem.newReleases.displayName, systemImage: NavigationItem.newReleases.icon)
                         }
                         .accessibilityIdentifier(AccessibilityID.Sidebar.newReleasesItem)
-
-                        NavigationLink(value: NavigationItem.podcasts) {
-                            Label(NavigationItem.podcasts.displayName, systemImage: NavigationItem.podcasts.icon)
-                        }
-                        .accessibilityIdentifier(AccessibilityID.Sidebar.podcastsItem)
                     }
 
                     // Collection section

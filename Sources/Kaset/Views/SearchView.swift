@@ -405,6 +405,8 @@ struct SearchView: View {
             self.playlistContextMenu(playlist)
         case let .podcastShow(show):
             self.podcastShowContextMenu(show)
+        case let .episode(episode):
+            self.episodeContextMenu(episode)
         }
     }
 
@@ -584,6 +586,34 @@ struct SearchView: View {
         FavoritesContextMenu.menuItem(for: show, manager: self.favoritesManager)
     }
 
+    @ViewBuilder
+    private func episodeContextMenu(_ episode: PodcastEpisode) -> some View {
+        Button {
+            self.playEpisode(episode)
+        } label: {
+            Label("Play", systemImage: "play.fill")
+        }
+
+        if let showBrowseId = episode.showBrowseId,
+           let showTitle = episode.showTitle
+        {
+            Divider()
+            Button {
+                let show = PodcastShow(
+                    id: showBrowseId,
+                    title: showTitle,
+                    author: nil,
+                    description: nil,
+                    thumbnailURL: episode.thumbnailURL,
+                    episodeCount: nil
+                )
+                self.navigationPath.append(show)
+            } label: {
+                Label("View Podcast", systemImage: "mic.fill")
+            }
+        }
+    }
+
     // MARK: - Helpers
 
     private func iconForItem(_ item: SearchResultItem) -> String {
@@ -598,6 +628,25 @@ struct SearchView: View {
             "music.note.list"
         case .podcastShow:
             "mic.fill"
+        case .episode:
+            "mic.circle.fill"
+        }
+    }
+
+    private func playEpisode(_ episode: PodcastEpisode) {
+        // Episodes play as a standalone track — convert to Song for the
+        // existing WebView-driven playback path, matching PodcastShowView.
+        let song = Song(
+            id: episode.id,
+            title: episode.title,
+            artists: episode.showTitle.map { [Artist(id: "podcast", name: $0)] } ?? [],
+            album: nil,
+            duration: episode.durationSeconds.map { TimeInterval($0) },
+            thumbnailURL: episode.thumbnailURL,
+            videoId: episode.id
+        )
+        Task {
+            await self.playerService.play(song: song)
         }
     }
 
@@ -625,6 +674,8 @@ struct SearchView: View {
             self.navigationPath.append(playlist)
         case let .podcastShow(show):
             self.navigationPath.append(show)
+        case let .episode(episode):
+            self.playEpisode(episode)
         }
     }
 }

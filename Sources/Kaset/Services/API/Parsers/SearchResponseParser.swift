@@ -68,6 +68,9 @@ enum SearchResponseParser {
         case .podcastShow:
             // Podcast shows not parsed in general search
             break
+        case .episode:
+            // Episodes only parsed via the dedicated episodes filter
+            break
         }
     }
 
@@ -389,6 +392,160 @@ enum SearchResponseParser {
         return (podcasts, token)
     }
 
+    /// Parses episodes from a filtered search response with continuation token.
+    static func parseEpisodesOnly(_ data: [String: Any]) -> ([PodcastEpisode], String?) {
+        var episodes: [PodcastEpisode] = []
+
+        guard let sectionListRenderer = getSectionListRenderer(from: data),
+              let sectionContents = sectionListRenderer["contents"] as? [[String: Any]]
+        else {
+            return ([], nil)
+        }
+
+        for sectionData in sectionContents {
+            if let shelfRenderer = sectionData["musicShelfRenderer"] as? [String: Any],
+               let shelfContents = shelfRenderer["contents"] as? [[String: Any]]
+            {
+                for itemData in shelfContents {
+                    if let episode = Self.parseEpisodeFromSearchResult(itemData) {
+                        episodes.append(episode)
+                    }
+                }
+            }
+        }
+
+        let token = Self.extractContinuationToken(from: sectionListRenderer)
+        return (episodes, token)
+    }
+
+    /// Parses a podcast episode from a search result item.
+    /// Shape: `musicResponsiveListItemRenderer` with `playlistItemData.videoId`,
+    /// flex[0] carrying the title (navigates to an MPED detail page with
+    /// `MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE`), and flex[1] carrying the
+    /// relative date plus the show name (navigates to an MPSPP show page).
+    private static func parseEpisodeFromSearchResult(_ data: [String: Any]) -> PodcastEpisode? {
+        guard let responsiveRenderer = data["musicResponsiveListItemRenderer"] as? [String: Any] else {
+            return nil
+        }
+
+        // videoId lives under playlistItemData for playable items; fall back to
+        // the overlay play-navigation endpoint if absent.
+        let videoIdFromPlaylistItem = (responsiveRenderer["playlistItemData"] as? [String: Any])?["videoId"] as? String
+        let videoIdFromOverlay: String? = {
+            guard let overlay = responsiveRenderer["overlay"] as? [String: Any],
+                  let thumbOverlay = overlay["musicItemThumbnailOverlayRenderer"] as? [String: Any],
+                  let content = thumbOverlay["content"] as? [String: Any],
+                  let playButton = content["musicPlayButtonRenderer"] as? [String: Any],
+                  let playNav = playButton["playNavigationEndpoint"] as? [String: Any],
+                  let watch = playNav["watchEndpoint"] as? [String: Any]
+            else { return nil }
+            return watch["videoId"] as? String
+        }()
+        guard let videoId = videoIdFromPlaylistItem ?? videoIdFromOverlay else {
+            return nil
+        }
+
+        // Confirm this is a podcast episode (vs a song that happens to appear
+        // in the shelf) by checking either the flex-page-type or the overlay
+        // watch config.
+        let isEpisode = Self.isPodcastEpisodeItem(responsiveRenderer)
+        guard isEpisode else { return nil }
+
+        let thumbnails = ParsingHelpers.extractThumbnails(from: responsiveRenderer)
+        let thumbnailURL = thumbnails.last.flatMap { URL(string: $0) }
+        let title = ParsingHelpers.extractTitleFromFlexColumns(responsiveRenderer) ?? "Unknown Episode"
+
+        // flex[1] is "<date> • <show name>" — split the runs to recover each.
+        let showInfo = Self.extractEpisodeShowInfo(responsiveRenderer)
+
+        return PodcastEpisode(
+            id: videoId,
+            title: title,
+            showTitle: showInfo.showTitle,
+            showBrowseId: showInfo.showBrowseId,
+            description: nil,
+            thumbnailURL: thumbnailURL,
+            publishedDate: showInfo.publishedDate,
+            duration: nil,
+            durationSeconds: nil,
+            playbackProgress: 0,
+            isPlayed: false
+        )
+    }
+
+    /// Walks flex[0] for a page-type hint, then falls back to the overlay
+    /// watchEndpoint's musicVideoType for a podcast-episode signal.
+    private static func isPodcastEpisodeItem(_ responsiveRenderer: [String: Any]) -> Bool {
+        if let flexColumns = responsiveRenderer["flexColumns"] as? [[String: Any]],
+           let firstFlex = flexColumns.first,
+           let flexRenderer = firstFlex["musicResponsiveListItemFlexColumnRenderer"] as? [String: Any],
+           let text = flexRenderer["text"] as? [String: Any],
+           let runs = text["runs"] as? [[String: Any]],
+           let firstRun = runs.first,
+           let nav = firstRun["navigationEndpoint"] as? [String: Any],
+           let browseEndpoint = nav["browseEndpoint"] as? [String: Any],
+           ParsingHelpers.extractPageType(from: browseEndpoint) == "MUSIC_PAGE_TYPE_NON_MUSIC_AUDIO_TRACK_PAGE"
+        {
+            return true
+        }
+
+        if let overlay = responsiveRenderer["overlay"] as? [String: Any],
+           let thumbOverlay = overlay["musicItemThumbnailOverlayRenderer"] as? [String: Any],
+           let content = thumbOverlay["content"] as? [String: Any],
+           let playButton = content["musicPlayButtonRenderer"] as? [String: Any],
+           let playNav = playButton["playNavigationEndpoint"] as? [String: Any],
+           let watch = playNav["watchEndpoint"] as? [String: Any],
+           let configs = watch["watchEndpointMusicSupportedConfigs"] as? [String: Any],
+           let musicConfig = configs["watchEndpointMusicConfig"] as? [String: Any],
+           let videoType = musicConfig["musicVideoType"] as? String,
+           videoType == "MUSIC_VIDEO_TYPE_PODCAST_EPISODE"
+        {
+            return true
+        }
+
+        return false
+    }
+
+    private struct EpisodeShowInfo {
+        var publishedDate: String?
+        var showTitle: String?
+        var showBrowseId: String?
+    }
+
+    /// Extracts the date and podcast-show metadata from flex[1].
+    /// Runs typically look like: ["1d ago", " • ", "<show name>"] where the
+    /// show-name run carries a browseEndpoint to the MPSPP show page.
+    private static func extractEpisodeShowInfo(
+        _ responsiveRenderer: [String: Any]
+    ) -> EpisodeShowInfo {
+        var info = EpisodeShowInfo()
+        guard let flexColumns = responsiveRenderer["flexColumns"] as? [[String: Any]],
+              flexColumns.count >= 2,
+              let flexRenderer = flexColumns[1]["musicResponsiveListItemFlexColumnRenderer"] as? [String: Any],
+              let text = flexRenderer["text"] as? [String: Any],
+              let runs = text["runs"] as? [[String: Any]]
+        else {
+            return info
+        }
+
+        for run in runs {
+            guard let runText = run["text"] as? String else { continue }
+            if let nav = run["navigationEndpoint"] as? [String: Any],
+               let browseEndpoint = nav["browseEndpoint"] as? [String: Any],
+               let browseId = browseEndpoint["browseId"] as? String,
+               browseId.hasPrefix("MPSPP")
+            {
+                info.showTitle = runText
+                info.showBrowseId = browseId
+            } else if runText != " • ", info.publishedDate == nil {
+                // First non-separator run with no navigation is the date.
+                info.publishedDate = runText
+            }
+        }
+
+        return info
+    }
+
     /// Parses a podcast show from a search result item.
     private static func parsePodcastShowFromSearchResult(_ data: [String: Any]) -> PodcastShow? {
         guard let responsiveRenderer = data["musicResponsiveListItemRenderer"] as? [String: Any] else {
@@ -455,6 +612,7 @@ enum SearchResponseParser {
         var artists: [Artist] = []
         var playlists: [Playlist] = []
         var podcastShows: [PodcastShow] = []
+        var episodes: [PodcastEpisode] = []
         var continuationToken: String?
 
         // Continuation responses have a different structure
@@ -464,8 +622,11 @@ enum SearchResponseParser {
             // Parse items
             if let contents = musicShelfContinuation["contents"] as? [[String: Any]] {
                 for itemData in contents {
-                    // Try to parse as podcast show first (for podcast search continuation)
-                    if let show = Self.parsePodcastShowFromSearchResult(itemData) {
+                    // Episodes come through the dedicated episodes filter — try that first.
+                    if let episode = Self.parseEpisodeFromSearchResult(itemData) {
+                        episodes.append(episode)
+                    } else if let show = Self.parsePodcastShowFromSearchResult(itemData) {
+                        // Try podcast show next (for podcast search continuation)
                         podcastShows.append(show)
                     } else if let item = parseSearchResultItem(itemData) {
                         Self.appendItem(item, songs: &songs, albums: &albums, artists: &artists, playlists: &playlists)
@@ -489,6 +650,7 @@ enum SearchResponseParser {
             artists: artists,
             playlists: playlists,
             podcastShows: podcastShows,
+            episodes: episodes,
             continuationToken: continuationToken
         )
     }

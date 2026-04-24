@@ -45,7 +45,6 @@ struct MainWindow: View {
     @State private var chartsViewModel: ChartsViewModel?
     @State private var moodsAndGenresViewModel: MoodsAndGenresViewModel?
     @State private var newReleasesViewModel: NewReleasesViewModel?
-    @State private var podcastsViewModel: PodcastsViewModel?
     @State private var likedMusicViewModel: LikedMusicViewModel?
     @State private var libraryViewModel: LibraryViewModel?
     @State private var historyViewModel: HistoryViewModel?
@@ -62,7 +61,6 @@ struct MainWindow: View {
         _chartsViewModel = State(initialValue: ChartsViewModel(client: client))
         _moodsAndGenresViewModel = State(initialValue: MoodsAndGenresViewModel(client: client))
         _newReleasesViewModel = State(initialValue: NewReleasesViewModel(client: client))
-        _podcastsViewModel = State(initialValue: PodcastsViewModel(client: client))
         _likedMusicViewModel = State(initialValue: LikedMusicViewModel(client: client))
         _libraryViewModel = State(initialValue: LibraryViewModel(client: client))
         _historyViewModel = State(initialValue: HistoryViewModel(client: client))
@@ -375,8 +373,6 @@ struct MainWindow: View {
                 if let vm = moodsAndGenresViewModel { MoodsAndGenresView(viewModel: vm) }
             case .newReleases:
                 if let vm = newReleasesViewModel { NewReleasesView(viewModel: vm) }
-            case .podcasts:
-                if let vm = podcastsViewModel { PodcastsView(viewModel: vm) }
             case .likedMusic:
                 if let vm = likedMusicViewModel { LikedMusicView(viewModel: vm) }
             case .library:
@@ -476,7 +472,6 @@ struct MainWindow: View {
             group.addTask { await self.chartsViewModel?.refresh() }
             group.addTask { await self.moodsAndGenresViewModel?.refresh() }
             group.addTask { await self.newReleasesViewModel?.refresh() }
-            group.addTask { await self.podcastsViewModel?.refresh() }
             group.addTask { await self.likedMusicViewModel?.refresh() }
             group.addTask { await self.historyViewModel?.load() }
             group.addTask { await self.libraryViewModel?.refresh() }
@@ -493,7 +488,6 @@ enum NavigationItem: String, Hashable, CaseIterable, Identifiable {
     case charts = "Charts"
     case moodsAndGenres = "Moods & Genres"
     case newReleases = "New Releases"
-    case podcasts = "Podcasts"
     case likedMusic = "Liked Music"
     case library = "Library"
     case history = "History"
@@ -516,8 +510,6 @@ enum NavigationItem: String, Hashable, CaseIterable, Identifiable {
             String(localized: "Moods & Genres")
         case .newReleases:
             String(localized: "New Releases")
-        case .podcasts:
-            String(localized: "Podcasts")
         case .likedMusic:
             String(localized: "Liked Music")
         case .library:
@@ -541,8 +533,6 @@ enum NavigationItem: String, Hashable, CaseIterable, Identifiable {
             "theatermask.and.paintbrush"
         case .newReleases:
             "sparkles"
-        case .podcasts:
-            "mic.fill"
         case .likedMusic:
             "heart.fill"
         case .library:

@@ -94,15 +94,6 @@ protocol YTMusicClientProtocol: Sendable {
     /// Whether more history sections are available to load.
     var hasMoreHistorySections: Bool { get }
 
-    /// Fetches the podcasts page content (initial sections only for fast display).
-    func getPodcasts() async throws -> [PodcastSection]
-
-    /// Fetches the next batch of podcasts sections via continuation.
-    func getPodcastsContinuation() async throws -> [PodcastSection]?
-
-    /// Whether more podcasts sections are available to load.
-    var hasMorePodcastsSections: Bool { get }
-
     /// Fetches details for a podcast show including its episodes.
     func getPodcastShow(browseId: String) async throws -> PodcastShowDetail
 
@@ -135,6 +126,10 @@ protocol YTMusicClientProtocol: Sendable {
 
     /// Searches for podcasts only (podcast shows).
     func searchPodcasts(query: String) async throws -> SearchResponse
+
+    /// Searches for podcast episodes only — including live-radio episodes,
+    /// which YouTube Music classifies under `MUSIC_VIDEO_TYPE_PODCAST_EPISODE`.
+    func searchEpisodes(query: String) async throws -> SearchResponse
 
     /// Fetches the next batch of search results via continuation.
     /// Returns nil if no more results are available.
