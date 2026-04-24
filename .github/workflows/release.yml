@@ -282,14 +282,16 @@ jobs:
           fi
 
       - name: Checkout Homebrew tap repo
+        if: ${{ secrets.HOMEBREW_REPO_TOKEN != '' }}
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
         with:
-          repository: sozercan/homebrew-repo
+          repository: ${{ github.repository_owner }}/homebrew-repo
           token: ${{ secrets.HOMEBREW_REPO_TOKEN }}
           path: homebrew-repo
           fetch-depth: 0
 
       - name: Update Homebrew Cask
+        if: ${{ secrets.HOMEBREW_REPO_TOKEN != '' }}
         run: |
           TAG="${{ steps.artifact.outputs.tag }}"
           VERSION="${TAG#v}"
@@ -303,10 +305,10 @@ jobs:
             version "$VERSION"
             sha256 "${{ steps.sha256.outputs.sha256 }}"
 
-            url "https://github.com/sozercan/kaset/releases/download/v#{version}/kaset-v#{version}.dmg"
+            url "https://github.com/${{ github.repository }}/releases/download/v#{version}/kaset-v#{version}.dmg"
             name "Kaset"
             desc "Native YouTube Music client"
-            homepage "https://github.com/sozercan/kaset"
+            homepage "https://github.com/${{ github.repository }}"
 
             auto_updates true
             depends_on macos: ">= :tahoe"
