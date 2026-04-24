@@ -2,10 +2,22 @@
 
 This file lives on `buggerman/kaset` only. Do not upstream it.
 
-## Why the fork diverges
+## Branch model
 
-The fork adds a small, dedicated commit — `chore(fork): …` — that replaces
-upstream's Sparkle config and "What's New" fetcher with fork-owned equivalents:
+| Branch | Role |
+|---|---|
+| `main` | The primary / release branch. Carries fork-branding + all features (fork-only and upstream-pending). Releases are cut from here (`v*` tags trigger `release.yml`). |
+| `upstream` | **A mirror of `sozercan/kaset:main`.** Only updated by fast-forwarding from the upstream remote. Never worked on directly. Used as the base for branches that need an upstream-clean diff. |
+| `feat/*`, `fix/*`, `chore/*` | Topic branches. See rules below for which base to pick. |
+
+`buggerman:main` is **yours** — your Sparkle feed, your public key, your
+"What's New" owner, your release workflow. Upstream improvements flow in by
+merging `upstream` into `main`.
+
+## Fork-only changes (why the branches diverge permanently)
+
+The fork-branding commit on `main` replaces upstream's Sparkle config and
+"What's New" fetcher with fork-owned equivalents:
 
 | Concern | Upstream | Fork |
 |---|---|---|
@@ -18,67 +30,107 @@ upstream's Sparkle config and "What's New" fetcher with fork-owned equivalents:
 These changes **cannot be upstreamed** — they'd point every upstream user at
 the fork.
 
-## Branching discipline
-
-To avoid accidentally including the fork-branding commit in an upstream PR:
-
-> **Always branch new features from `upstream/main`, not from
-> `buggerman/main`.**
+## Keeping `upstream` current
 
 ```bash
 git fetch upstream
-git checkout -b feat/whatever upstream/main
-# ... work ...
+git push origin upstream/main:refs/heads/upstream
 ```
 
-Then push the branch to both remotes as needed:
+That's it — no local checkout needed. `origin/upstream` advances to match
+`sozercan:main`. Because it's never diverged, this is always a fast-forward.
+
+You can automate this with a `.github/workflows/sync-upstream.yml` cron if you
+prefer, but the two-line command is fine.
+
+## Pulling upstream changes into `main`
+
+When upstream ships something you want, merge `upstream` into `main` through a
+PR so CI runs and you see the diff:
 
 ```bash
-# To fork (for your own testing + a PR into buggerman/main):
-git push origin feat/whatever
-gh pr create --repo buggerman/kaset --base main --head feat/whatever
-
-# To upstream for review:
-gh pr create --repo sozercan/kaset --base main --head buggerman:feat/whatever
+# After the upstream-sync push above
+gh pr create --repo buggerman/kaset --base main --head upstream \
+    --title "chore: sync upstream" --body "Merging upstream/main into main."
 ```
 
-Because the branch is based on `upstream/main`, the **upstream PR diff is
-clean** — no fork-branding noise. When the same branch merges into
-`buggerman/main`, it lands on top of the fork-branding commit.
-
-## When upstream moves, sync `buggerman/main`
-
-If `buggerman/main` has no local commits beyond the fork-branding one:
+Or just merge locally if no CI review is needed:
 
 ```bash
-git fetch upstream
 git checkout main
-git merge upstream/main   # or: git pull upstream main
+git pull
+git merge origin/upstream
 git push origin main
 ```
 
-A merge commit is expected (fork-branding is local). That's fine.
+Conflicts typically surface only against the fork-branding commit (Sparkle
+config, WhatsNewProvider, release workflow). Resolve by keeping the fork side.
 
-Alternatively, rebase the fork-branding commit on top of upstream:
+## Sending a PR upstream
+
+When you have a change on `main` that's generic enough to upstream:
+
+```bash
+git fetch origin
+git checkout -b feat/whatever origin/upstream    # base from the tracking branch
+# cherry-pick from main, or rewrite the change here
+git cherry-pick <commit-from-main>                # or re-implement cleanly
+git push origin feat/whatever                     # optional — for your CI
+
+# Open PR against sozercan:main
+gh pr create --repo sozercan/kaset --base main --head buggerman:feat/whatever
+```
+
+Because the branch is based on `origin/upstream` (= `sozercan:main`), the PR
+diff is **upstream-clean** — no fork-branding, no unrelated local features.
+
+If the same work should also land on your fork's `main` (e.g. you're shipping
+it to your users before upstream accepts it), open a second PR:
+
+```bash
+gh pr create --repo buggerman/kaset --base main --head feat/whatever
+```
+
+This pattern keeps main free to carry fork-branding without polluting the
+upstream-facing branch.
+
+## Pre-flight conflict check
+
+To see if upcoming upstream changes would conflict with your fork before
+merging, do a dry-run merge locally:
 
 ```bash
 git fetch upstream
 git checkout main
-git rebase upstream/main
-git push --force-with-lease origin main
+git pull
+git merge --no-commit --no-ff origin/upstream
+# inspect
+git merge --abort    # revert the dry-run
 ```
 
-Cleaner history, but forces anyone else with the branch checked out to reset.
+Or use `git merge-tree`:
+
+```bash
+git merge-tree --name-only --write-tree main origin/upstream
+# prints conflicting files if any, nothing if clean
+```
 
 ## Releasing from the fork
 
-Push a `v*` tag. `.github/workflows/release.yml` will:
+Push a `v*` tag on `main`. `.github/workflows/release.yml` will:
 
 1. Build a Universal DMG, sign with `SPARKLE_PRIVATE_KEY` secret.
 2. Create a GitHub release and upload the DMG.
 3. Update `appcast.xml` at repo root with the new `<item>` (Sparkle clients
    pick it up within `SUScheduledCheckInterval` seconds).
 4. **Skip** the Homebrew tap step unless `HOMEBREW_REPO_TOKEN` is configured.
+
+```bash
+git checkout main
+git pull
+git tag v0.9.0
+git push origin v0.9.0
+```
 
 If you want the Homebrew path too, create `buggerman/homebrew-repo` and add a
 PAT with `contents:write` scope as `HOMEBREW_REPO_TOKEN`.
