@@ -265,7 +265,7 @@ ${APP_LOCALIZATIONS_PLIST}
     <key>LSMinimumSystemVersion</key>
     <string>26.0</string>
     <key>NSHumanReadableCopyright</key>
-    <string>Copyright © 2025 Sertac Ozercan. All rights reserved.</string>
+    <string>Copyright © 2026 Kaset contributors.</string>
     <key>NSPrincipalClass</key>
     <string>NSApplication</string>
     <key>LSUIElement</key>

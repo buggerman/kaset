@@ -34,13 +34,7 @@ A native macOS YouTube Music client built with Swift and SwiftUI.
 
 ### Download
 
-Download the latest release from the [Releases](https://github.com/sozercan/kaset/releases) page.
-
-### Homebrew
-
-```bash
-brew install sozercan/repo/kaset
-```
+Download the latest release from the [Releases](https://github.com/buggerman/kaset/releases) page.
 
 > **Note:** The app is not signed.
 > If you downloaded the app manually, you can clear extended attributes (including quarantine) with:

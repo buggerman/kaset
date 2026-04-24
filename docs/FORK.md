@@ -26,9 +26,27 @@ The fork-branding commit on `main` replaces upstream's Sparkle config and
 | `WhatsNewProvider.owner` | `"sozercan"` | `"buggerman"` |
 | Release workflow's Homebrew tap | hardcoded `sozercan/homebrew-repo` | `${{ github.repository_owner }}/homebrew-repo`, gated on `HOMEBREW_REPO_TOKEN` |
 | `appcast.xml` | upstream's entries | reset; populated by fork's release workflow on each `v*` tag |
+| `LICENSE` | `Copyright (c) 2025 sozercan` | upstream line retained (MIT requires it) + added `Copyright (c) 2026 Kaset contributors` |
+| `NSHumanReadableCopyright` (`Scripts/build-app.sh`) | `Copyright © 2025 Sertac Ozercan. All rights reserved.` | `Copyright © 2026 Kaset contributors.` |
+| `GeneralSettingsView` About → GitHub link | `https://github.com/sozercan/kaset` | `https://github.com/buggerman/kaset` |
+| `README.md` Download link | `sozercan/kaset/releases` | `buggerman/kaset/releases`; Homebrew section removed until fork tap exists |
+| `CONTRIBUTING.md` clone URL | `sozercan/kaset.git` | `buggerman/kaset.git` |
+| `.github/ISSUE_TEMPLATE/config.yml` Discussions link | `sozercan/kaset/discussions` | `buggerman/kaset/discussions` |
 
 These changes **cannot be upstreamed** — they'd point every upstream user at
-the fork.
+the fork. Because topic branches destined for upstream are always based on
+`origin/upstream` (see the branch model above), they never include these
+edits. If you cherry-pick from `main` onto an upstream-PR branch, re-verify
+by running `git diff origin/upstream...HEAD` and confirm none of the paths
+above show up in the diff.
+
+Known upstream-infra dependency (not rewritten — fork has no replacement):
+
+- `Sources/Kaset/Services/Scrobbling/LastFMService.swift` — `workerBaseURL`
+  points at `kaset-lastfm.sozercan.workers.dev` (upstream's Cloudflare
+  Worker). Last.fm scrobbling therefore still routes through upstream
+  infrastructure. Rewrite when a fork-owned worker is available, or
+  disable Last.fm for the fork if this becomes a concern.
 
 ## Keeping `upstream` current
 

@@ -14,7 +14,7 @@ Thank you for your interest in contributing! This document provides guidelines a
 
 ```bash
 # Clone the repository
-git clone https://github.com/sozercan/kaset.git
+git clone https://github.com/buggerman/kaset.git
 cd kaset
 
 # Build from command line
