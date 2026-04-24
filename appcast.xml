@@ -1,26 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
     <channel>
-        <title>Kaset Updates (fork)</title>
+        <title>Kaset Updates</title>
         <link>https://github.com/buggerman/kaset/releases</link>
-        <description>Most recent updates for the buggerman/kaset fork.</description>
+        <description>Most recent updates for Kaset, a native macOS YouTube Music client.</description>
         <language>en</language>
+
         <item>
-            <title>v0.8.5</title>
-            <pubDate>Fri, 24 Apr 2026 09:42:13 +0000</pubDate>
-            <sparkle:version>9</sparkle:version>
-            <sparkle:shortVersionString>0.8.5</sparkle:shortVersionString>
+            <title>Version 0.8.5-1</title>
+            <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/v0.8.5-1</sparkle:releaseNotesLink>
+            <pubDate>Fri, 24 Apr 2026 14:04:51 +0000</pubDate>
+            <enclosure
+                url="https://github.com/buggerman/kaset/releases/download/v0.8.5-1/kaset-v0.8.5-1.dmg"
+                sparkle:version="10"
+                sparkle:shortVersionString="0.8.5-1"
+                length="8094065"
+                type="application/octet-stream"
+                sparkle:edSignature="zcYFato+bKzAK6PDM4yoTBuvYIPcbVHL/Lqt8hLgDNC1TXLO9Y/sO/jczsYGETac2kjQUqhAa4/gD08xH3xXAA=="/>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
-            <description><![CDATA[<h2>What's New</h2>
-<ul>
-<li>Initial release</li>
-</ul>]]></description>
-            <enclosure url="https://github.com/buggerman/kaset/releases/download/v0.8.5/kaset-v0.8.5.dmg"
-                       sparkle:version="9"
-                       sparkle:shortVersionString="0.8.5"
-                       length="8202519"
-                       type="application/octet-stream"
-                       sparkle:edSignature="dMxHDJNLDr0bGEDqK9s6f4bY+iKznKgO5GFgOZQIt5EC0z8DVeBGIfcK8xyZosu8q/FGvj7XGGL+K0QS3boIDg==" />
         </item>
+
     </channel>
 </rss>
