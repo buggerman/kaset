@@ -7,16 +7,16 @@
         <language>en</language>
 
         <item>
-            <title>Version 0.8.5-1</title>
-            <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/v0.8.5-1</sparkle:releaseNotesLink>
-            <pubDate>Fri, 24 Apr 2026 14:04:51 +0000</pubDate>
+            <title>Version 0.8.5-2</title>
+            <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/v0.8.5-2</sparkle:releaseNotesLink>
+            <pubDate>Fri, 24 Apr 2026 14:50:31 +0000</pubDate>
             <enclosure
-                url="https://github.com/buggerman/kaset/releases/download/v0.8.5-1/kaset-v0.8.5-1.dmg"
-                sparkle:version="10"
-                sparkle:shortVersionString="0.8.5-1"
-                length="8094065"
+                url="https://github.com/buggerman/kaset/releases/download/v0.8.5-2/kaset-v0.8.5-2.dmg"
+                sparkle:version="11"
+                sparkle:shortVersionString="0.8.5-2"
+                length="8094027"
                 type="application/octet-stream"
-                sparkle:edSignature="zcYFato+bKzAK6PDM4yoTBuvYIPcbVHL/Lqt8hLgDNC1TXLO9Y/sO/jczsYGETac2kjQUqhAa4/gD08xH3xXAA=="/>
+                sparkle:edSignature="tOmomkpCYBiz4lI0aNK0DttynQuF9b7TCmvBMXiQIrE+yX9zoMGh5O3jKxP5BHNT0GoQ795gnFZ10XNJxNC7BA=="/>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
         </item>
 
