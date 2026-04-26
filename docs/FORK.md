@@ -154,6 +154,25 @@ Path filters in `nightly.yml` skip pushes that only touch `**/*.md`,
 `.editorconfig`. Adjust if you want a different definition of
 "non-documentation."
 
+### Required secret: `RELEASE_TAG_PUSH_TOKEN`
+
+`nightly.yml` pushes the new tag via this secret. GitHub's workflow-loop
+guard suppresses downstream workflows for tags pushed with the default
+`GITHUB_TOKEN`, so without a PAT the tag would land but `release.yml`
+wouldn't fire.
+
+To set it up once:
+
+1. GitHub → Settings → Developer settings → Personal access tokens →
+   Fine-grained → Generate new token.
+2. Repository access: only `buggerman/kaset`.
+3. Permissions: **Contents: Read and write**.
+4. Copy the token, then in repo → Settings → Secrets and variables →
+   Actions → New repository secret named `RELEASE_TAG_PUSH_TOKEN`.
+
+If the secret is missing, `nightly.yml` falls back to `GITHUB_TOKEN` —
+the tag still gets pushed but the release won't auto-publish.
+
 Nightlies are ad-hoc signed (same as stable), so they will hit the same
 "An error occurred while launching the installer" Sparkle failure if a
 user tried to update through it. That's the second reason nightlies are

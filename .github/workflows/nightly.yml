@@ -42,6 +42,13 @@ jobs:
         with:
           fetch-depth: 0
           ref: main
+          # Use a PAT so the tag push triggers release.yml. Tags pushed by
+          # the default GITHUB_TOKEN are silently suppressed by GitHub's
+          # workflow-loop guard, which would leave the tag orphaned.
+          # Falls back to GITHUB_TOKEN if the secret isn't configured yet
+          # (workflow still tags the commit, just won't auto-trigger
+          # release.yml until the PAT is added).
+          token: ${{ secrets.RELEASE_TAG_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
 
       - name: Determine base version
         id: base
