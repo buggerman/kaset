@@ -202,7 +202,12 @@ enum SearchResponseParser {
         }
 
         if ParsingHelpers.isArtistPageType(pageType) || Artist.isNavigableId(browseId) {
-            let artist = Artist(id: browseId, name: title, thumbnailURL: thumbnailURL)
+            let artist = Artist(
+                id: browseId,
+                name: title,
+                thumbnailURL: thumbnailURL,
+                profileKind: Artist.profileKind(forPageType: pageType)
+            )
             return .artist(artist)
         }
 
@@ -213,7 +218,7 @@ enum SearchResponseParser {
                 description: nil,
                 thumbnailURL: thumbnailURL,
                 trackCount: nil,
-                author: subtitle
+                author: subtitle.map { Artist.inline(name: $0, namespace: "playlist-author") }
             )
             return .playlist(playlist)
         }
