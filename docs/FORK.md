@@ -133,6 +133,32 @@ git merge-tree --name-only --write-tree main origin/upstream
 # prints conflicting files if any, nothing if clean
 ```
 
+## Nightly releases
+
+Every push to `main` that touches non-doc files triggers
+`.github/workflows/nightly.yml`, which:
+
+1. Computes a tag `v{baseVersion}-nightly.{YYYYMMDD.HHMM}` (base version
+   read from the most recent non-prerelease tag, with any `-N` revision
+   suffix stripped).
+2. Pushes that tag, which wakes up `release.yml`.
+3. `release.yml` builds the DMG, publishes a **prerelease** GitHub
+   release, and **skips** both the stable Sparkle appcast update and
+   the Homebrew tap update (those are stable-only).
+4. As the final step of the release, `release.yml` deletes every other
+   nightly release + tag. Only the most recent nightly survives.
+
+Path filters in `nightly.yml` skip pushes that only touch `**/*.md`,
+`docs/**`, `LICENSE`, `appcast.xml`, `.github/ISSUE_TEMPLATE/**`,
+`.github/dependabot.yml`, `.gitignore`, `.gitattributes`, and
+`.editorconfig`. Adjust if you want a different definition of
+"non-documentation."
+
+Nightlies are ad-hoc signed (same as stable), so they will hit the same
+"An error occurred while launching the installer" Sparkle failure if a
+user tried to update through it. That's the second reason nightlies are
+not pushed to the stable appcast — they're direct-download only.
+
 ## Releasing from the fork
 
 Push a `v*` tag on `main`. `.github/workflows/release.yml` will:

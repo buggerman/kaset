@@ -1,0 +1,90 @@
+name: Nightly Tag
+
+# Tags a new nightly release on every push to main that touches non-doc
+# files. The pushed tag (v{base}-nightly.{YYYYMMDD.HHMM}) triggers
+# release.yml, which builds the DMG, publishes it as a prerelease, skips
+# the stable Sparkle appcast, and prunes older nightly releases so only
+# the most recent nightly stays on the releases page.
+
+on:
+  push:
+    branches: [main]
+    # Skip pushes that only touch documentation, license text, the
+    # appcast itself (would loop), CI dotfiles, and editor metadata.
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+      - "LICENSE"
+      - "appcast.xml"
+      - ".github/ISSUE_TEMPLATE/**"
+      - ".github/dependabot.yml"
+      - ".gitignore"
+      - ".gitattributes"
+      - ".editorconfig"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+# Serialize nightly-tagging runs so two rapid pushes don't race the
+# tag/cleanup logic. Newer runs cancel older ones — we only ever care
+# about tagging the latest commit.
+concurrency:
+  group: nightly-tag
+  cancel-in-progress: true
+
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main with tags
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+        with:
+          fetch-depth: 0
+          ref: main
+
+      - name: Determine base version
+        id: base
+        run: |
+          # Pick the most recent non-prerelease tag and strip any -N revision
+          # suffix (e.g. v0.8.5-2 → 0.8.5). Falls back to 0.0.0 on a fresh repo.
+          LATEST_STABLE=$(git tag -l 'v*' --sort=-v:refname \
+            | grep -vE -- '-(nightly|alpha|beta|rc|dev)' \
+            | head -1)
+          if [ -z "$LATEST_STABLE" ]; then
+            BASE="0.0.0"
+          else
+            BASE="${LATEST_STABLE#v}"
+            BASE="${BASE%%-*}"
+          fi
+          echo "base=$BASE" >> "$GITHUB_OUTPUT"
+          echo "Base version: $BASE"
+
+      - name: Compute nightly tag
+        id: tag
+        run: |
+          BASE="${{ steps.base.outputs.base }}"
+          STAMP=$(date -u +%Y%m%d.%H%M)
+          TAG="v${BASE}-nightly.${STAMP}"
+
+          # Defensive: if a tag already exists for this exact minute (rare
+          # race when two concurrent runs pass through here despite the
+          # concurrency group), append a short SHA suffix to disambiguate.
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            TAG="${TAG}-$(git rev-parse --short HEAD)"
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Nightly tag: $TAG"
+
+      - name: Configure git user
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create and push nightly tag
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          git tag -a "$TAG" -m "Nightly build $TAG"
+          git push origin "$TAG"
+          echo "Pushed $TAG — release.yml will build, publish, and prune older nightlies."
