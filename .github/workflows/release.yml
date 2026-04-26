@@ -400,17 +400,21 @@ jobs:
       - name: Prune older nightly releases
         # Only keep the just-published nightly. Older nightlies + their tags
         # are deleted so the releases page stays uncluttered.
+        # NOTE: avoid `mapfile` — runner is macOS-26, system bash is 3.2,
+        # which doesn't include it. Pipe straight into a while-loop instead.
         if: steps.prerelease.outputs.is_prerelease == 'true' && contains(steps.artifact.outputs.tag, '-nightly.')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           CURRENT_TAG="${{ steps.artifact.outputs.tag }}"
-          mapfile -t OLD_TAGS < <(gh release list --limit 100 --json tagName --jq '.[] | select(.tagName | test("-nightly\\.")) | .tagName' | grep -v "^${CURRENT_TAG}$" || true)
-          if [ ${#OLD_TAGS[@]} -eq 0 ]; then
-            echo "No older nightlies to prune."
-            exit 0
-          fi
-          for OLD in "${OLD_TAGS[@]}"; do
-            echo "Deleting old nightly release + tag: $OLD"
-            gh release delete "$OLD" --cleanup-tag --yes || true
-          done
+          PRUNED=0
+          gh release list --limit 100 --json tagName \
+            --jq '.[] | select(.tagName | test("-nightly\\.")) | .tagName' \
+            | grep -v "^${CURRENT_TAG}$" \
+            | while IFS= read -r OLD; do
+                [ -z "$OLD" ] && continue
+                echo "Deleting old nightly release + tag: $OLD"
+                gh release delete "$OLD" --cleanup-tag --yes || true
+                PRUNED=$((PRUNED + 1))
+              done
+          echo "Prune step finished."
