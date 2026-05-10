@@ -73,21 +73,11 @@ jobs:
             TAG="0.0.0"
           fi
 
-          if [[ "$TAG" =~ ^nightly- ]]; then
-            # Tag format: nightly-YYYYMMDD-<sha>
-            # Derive a CFBundleShortVersionString from the most recent stable
-            # tag plus the nightly suffix so the version string is sortable
-            # and visibly identifies a nightly build.
-            LAST_STABLE=$(git tag -l 'v*' --sort=-v:refname \
-              | grep -vE -- '-(alpha|beta|rc|dev|nightly)' \
-              | head -1)
-            BASE="${LAST_STABLE#v}"
-            BASE="${BASE:-0.0.0}"
-            SUFFIX="${TAG#nightly-}"  # YYYYMMDD-<sha>
-            VERSION="${BASE}-nightly.${SUFFIX}"
-          else
-            VERSION="${TAG#v}"  # Remove 'v' prefix if present
-          fi
+          # Stable tags strip the 'v' prefix; nightly tags use the tag
+          # verbatim (e.g. nightly-20260510-<sha>) as the marketing version.
+          # Sparkle ordering uses sparkle:version (github.run_number), so the
+          # short string is purely for display.
+          VERSION="${TAG#v}"
 
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Using version: $VERSION"
