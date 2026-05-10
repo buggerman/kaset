@@ -9,14 +9,14 @@
         <item>
             <title>Version 0.9.0</title>
             <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/v0.9.0</sparkle:releaseNotesLink>
-            <pubDate>Sat, 10 May 2026 11:25:11 +0000</pubDate>
+            <pubDate>Sun, 10 May 2026 12:16:30 +0000</pubDate>
             <enclosure
                 url="https://github.com/buggerman/kaset/releases/download/v0.9.0/kaset-v0.9.0.dmg"
-                sparkle:version="18"
+                sparkle:version="20"
                 sparkle:shortVersionString="0.9.0"
-                length="8966548"
+                length="8966639"
                 type="application/octet-stream"
-                sparkle:edSignature="qaEn77QRIy1C6+3UsqDcXzJcwRhmxd76OfwSA02UuL2J44yLp7Ts6xFg00Y//2X7j6mtnwezGUvGr3U7kfVMBQ=="/>
+                sparkle:edSignature="t6sRB2jf0pWdyIApOeV1eEgmvn7jjYiAhQ50g+NxubiJi5ZS8OqmygIWiAl5M4XS6dqv3ZPM6TN0O+L3UUydAw=="/>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
         </item>
 
