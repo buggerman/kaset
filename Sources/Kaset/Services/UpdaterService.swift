@@ -17,9 +17,9 @@ enum UpdateChannel: String, CaseIterable {
     var feedURL: URL? {
         switch self {
         case .stable:
-            return nil // uses SUFeedURL from Info.plist
+            nil // uses SUFeedURL from Info.plist
         case .nightly:
-            return URL(string: "https://raw.githubusercontent.com/buggerman/kaset/main/appcast-nightly.xml")
+            URL(string: "https://raw.githubusercontent.com/buggerman/kaset/main/appcast-nightly.xml")
         }
     }
 }
