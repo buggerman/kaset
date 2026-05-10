@@ -106,6 +106,13 @@ struct GeneralSettingsView: View {
             Section {
                 Toggle("Automatically check for updates", isOn: $updater.automaticChecksEnabled)
 
+                Picker("Update Channel", selection: $updater.updateChannel) {
+                    ForEach(UpdateChannel.allCases, id: \.self) { channel in
+                        Text(channel.displayName).tag(channel)
+                    }
+                }
+                .help("Stable receives tested releases. Nightly receives the latest build from every commit.")
+
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Software Update")

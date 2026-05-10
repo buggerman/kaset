@@ -411,24 +411,32 @@ jobs:
 
           TAG="${{ steps.artifact.outputs.tag }}"
           VERSION="${TAG#v}"
-
-          # Update appcast.xml for Sparkle auto-updates
           SIGNATURE="${{ steps.sparkle_sign.outputs.signature }}"
           LENGTH="${{ steps.sparkle_sign.outputs.length }}"
 
-          if [ -n "$SIGNATURE" ]; then
-            PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S %z")
-            DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${{ steps.artifact.outputs.filename }}"
-            RELEASE_NOTES_URL="https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+          # Route to the correct feed: nightly tags go to appcast-nightly.xml,
+          # stable v* tags go to appcast.xml.
+          if [[ "$TAG" =~ ^nightly- ]]; then
+            APPCAST_FILE="appcast-nightly.xml"
+            FEED_TITLE="Kaset Nightly Updates"
+            FEED_DESC="Most recent nightly builds of Kaset."
+          else
+            APPCAST_FILE="appcast.xml"
+            FEED_TITLE="Kaset Updates"
+            FEED_DESC="Most recent updates for Kaset, a native macOS YouTube Music client."
+          fi
 
-            # Create updated appcast.xml with the new item at the top
-            cat > appcast.xml << APPCAST_EOF
+          PUB_DATE=$(date -u "+%a, %d %b %Y %H:%M:%S %z")
+          DOWNLOAD_URL="https://github.com/${{ github.repository }}/releases/download/${TAG}/${{ steps.artifact.outputs.filename }}"
+          RELEASE_NOTES_URL="https://github.com/${{ github.repository }}/releases/tag/${TAG}"
+
+          cat > "${APPCAST_FILE}" << APPCAST_EOF
           <?xml version="1.0" encoding="utf-8"?>
           <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
               <channel>
-                  <title>Kaset Updates</title>
+                  <title>${FEED_TITLE}</title>
                   <link>https://github.com/${{ github.repository }}/releases</link>
-                  <description>Most recent updates for Kaset, a native macOS YouTube Music client.</description>
+                  <description>${FEED_DESC}</description>
                   <language>en</language>
 
                   <item>
@@ -449,10 +457,9 @@ jobs:
           </rss>
           APPCAST_EOF
 
-            git add appcast.xml
-            git diff --cached --quiet || git commit -m "Update appcast to ${{ steps.artifact.outputs.tag }}"
-            git push origin ${{ github.event.repository.default_branch }}
-          fi
+          git add "${APPCAST_FILE}"
+          git diff --cached --quiet || git commit -m "Update ${APPCAST_FILE} to ${TAG}"
+          git push origin ${{ github.event.repository.default_branch }}
 
       - name: Prune older nightly releases
         # Only keep the just-published nightly. Older nightlies + their tags

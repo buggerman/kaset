@@ -1,71 +1,86 @@
 import Foundation
 import Sparkle
 
+// MARK: - UpdateChannel
+
+enum UpdateChannel: String, CaseIterable {
+    case stable
+    case nightly
+
+    var displayName: String {
+        switch self {
+        case .stable: String(localized: "Stable")
+        case .nightly: String(localized: "Nightly")
+        }
+    }
+
+    var feedURL: URL? {
+        switch self {
+        case .stable:
+            return nil // uses SUFeedURL from Info.plist
+        case .nightly:
+            return URL(string: "https://raw.githubusercontent.com/buggerman/kaset/main/appcast-nightly.xml")
+        }
+    }
+}
+
+// MARK: - UpdaterDelegate
+
+private final class UpdaterDelegate: NSObject, SPUUpdaterDelegate {
+    var channel: UpdateChannel = .stable
+
+    func feedURLString(for _: SPUUpdater) -> String? {
+        self.channel.feedURL?.absoluteString
+    }
+}
+
 // MARK: - UpdaterService
 
 /// Manages application updates via Sparkle framework.
-///
-/// This service wraps Sparkle's `SPUStandardUpdaterController` to provide
-/// a SwiftUI-friendly interface for checking and installing updates.
-///
-/// Usage:
-/// ```swift
-/// @State private var updaterService = UpdaterService()
-///
-/// Button("Check for Updates") {
-///     updaterService.checkForUpdates()
-/// }
-/// .disabled(!updaterService.canCheckForUpdates)
-/// ```
 @available(macOS 26.0, *)
 @MainActor
 @Observable
 final class UpdaterService {
-    /// The Sparkle updater controller that manages the update lifecycle.
     private let updaterController: SPUStandardUpdaterController
+    private let delegate = UpdaterDelegate()
 
-    /// Whether automatic update checks are enabled.
-    ///
-    /// When enabled, the app checks for updates on launch and periodically thereafter
-    /// (default: every 24 hours, configurable via `SUScheduledCheckInterval` in Info.plist).
+    private static let channelKey = "updateChannel"
+
     var automaticChecksEnabled: Bool {
         get { self.updaterController.updater.automaticallyChecksForUpdates }
         set { self.updaterController.updater.automaticallyChecksForUpdates = newValue }
     }
 
-    /// Whether the updater can currently check for updates.
-    ///
-    /// This is `false` while an update check is already in progress or during installation.
     var canCheckForUpdates: Bool {
         self.updaterController.updater.canCheckForUpdates
     }
 
-    /// The date of the last update check, or `nil` if never checked.
     var lastUpdateCheckDate: Date? {
         self.updaterController.updater.lastUpdateCheckDate
     }
 
-    /// Initializes the updater service and starts the Sparkle updater.
-    ///
-    /// The updater will automatically check for updates on launch if
-    /// `SUEnableAutomaticChecks` is `true` in Info.plist.
+    var updateChannel: UpdateChannel {
+        get { self.delegate.channel }
+        set {
+            self.delegate.channel = newValue
+            UserDefaults.standard.set(newValue.rawValue, forKey: Self.channelKey)
+            DiagnosticsLogger.updater.info("Update channel changed to \(newValue.rawValue)")
+        }
+    }
+
     init() {
-        // Initialize Sparkle with default UI and start the updater
+        let stored = UserDefaults.standard.string(forKey: Self.channelKey) ?? ""
+        self.delegate.channel = UpdateChannel(rawValue: stored) ?? .stable
+
         self.updaterController = SPUStandardUpdaterController(
             startingUpdater: true,
-            updaterDelegate: nil,
+            updaterDelegate: self.delegate,
             userDriverDelegate: nil
         )
 
-        DiagnosticsLogger.updater.info("UpdaterService initialized")
+        DiagnosticsLogger.updater.info("UpdaterService initialized (channel: \(self.delegate.channel.rawValue))")
     }
 
-    /// Manually triggers an update check.
-    ///
-    /// This shows Sparkle's standard update UI, including:
-    /// - "Checking for updates..." progress indicator
-    /// - "A new version is available" dialog if an update exists
-    /// - "You're up to date" message if no update is available
     func checkForUpdates() {
         DiagnosticsLogger.updater.info("Manually checking for updates")
         self.updaterController.checkForUpdates(nil)

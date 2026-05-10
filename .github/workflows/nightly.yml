@@ -16,6 +16,7 @@ on:
       - "docs/**"
       - "LICENSE"
       - "appcast.xml"
+      - "appcast-nightly.xml"
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/dependabot.yml"
       - ".gitignore"
