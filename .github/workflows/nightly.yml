@@ -53,8 +53,12 @@ jobs:
         id: tag
         run: |
           DATE=$(date -u +%Y%m%d)
+          BUILD=$(printf '%08d' "${{ github.run_number }}")
           SHA=$(git rev-parse --short HEAD)
-          TAG="nightly-${DATE}-${SHA}"
+          # Embed an 8-digit, zero-padded build number between the date and
+          # the commit so tags sort chronologically even within the same UTC
+          # day (raw SHAs don't sort meaningfully).
+          TAG="nightly-${DATE}-${BUILD}-${SHA}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Nightly tag: $TAG"
 
