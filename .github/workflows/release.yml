@@ -283,10 +283,10 @@ jobs:
           # previous stable so changelog isn't dominated by per-commit
           # nightly tags.
           CURRENT_TAG="${{ steps.artifact.outputs.tag }}"
-          if [[ "$CURRENT_TAG" =~ -nightly ]]; then
-            PREV_TAG=$(git tag -l 'v*-nightly.*' --sort=-v:refname | grep -v "^${CURRENT_TAG}$" | head -1)
+          if [[ "$CURRENT_TAG" =~ ^nightly- ]]; then
+            PREV_TAG=$(git tag -l 'nightly-*' --sort=-v:refname | grep -v "^${CURRENT_TAG}$" | head -1)
           else
-            PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -vE -- '-(nightly|alpha|beta|rc|dev)' | grep -v "^${CURRENT_TAG}$" | head -1)
+            PREV_TAG=$(git tag -l 'v*' --sort=-v:refname | grep -vE -- '-(alpha|beta|rc|dev)' | grep -v "^${CURRENT_TAG}$" | head -1)
           fi
           # Fallback if filtering yielded nothing
           if [ -z "$PREV_TAG" ]; then
@@ -315,7 +315,7 @@ jobs:
         id: prerelease
         run: |
           TAG="${{ steps.artifact.outputs.tag }}"
-          if [[ "$TAG" =~ -(alpha|beta|rc|dev|nightly) ]]; then
+          if [[ "$TAG" =~ ^nightly- ]] || [[ "$TAG" =~ -(alpha|beta|rc|dev) ]]; then
             echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
           else
             echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
@@ -457,14 +457,14 @@ jobs:
         # are deleted so the releases page stays uncluttered.
         # NOTE: avoid `mapfile` — runner is macOS-26, system bash is 3.2,
         # which doesn't include it. Pipe straight into a while-loop instead.
-        if: steps.prerelease.outputs.is_prerelease == 'true' && contains(steps.artifact.outputs.tag, '-nightly.')
+        if: steps.prerelease.outputs.is_prerelease == 'true' && startsWith(steps.artifact.outputs.tag, 'nightly-')
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           CURRENT_TAG="${{ steps.artifact.outputs.tag }}"
           PRUNED=0
           gh release list --limit 100 --json tagName \
-            --jq '.[] | select(.tagName | test("-nightly\\.")) | .tagName' \
+            --jq '.[] | select(.tagName | test("^nightly-")) | .tagName' \
             | grep -v "^${CURRENT_TAG}$" \
             | while IFS= read -r OLD; do
                 [ -z "$OLD" ] && continue

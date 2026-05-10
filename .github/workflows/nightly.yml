@@ -1,7 +1,7 @@
 name: Nightly Tag
 
 # Tags a new nightly release on every push to main that touches non-doc
-# files. The pushed tag (v{base}-nightly.{YYYYMMDD.HHMM}) triggers
+# files. The pushed tag (nightly-{YYYYMMDD}-{short_sha}) triggers
 # release.yml, which builds the DMG, publishes it as a prerelease, skips
 # the stable Sparkle appcast, and prunes older nightly releases so only
 # the most recent nightly stays on the releases page.
@@ -50,37 +50,12 @@ jobs:
           # release.yml until the PAT is added).
           token: ${{ secrets.RELEASE_TAG_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
 
-      - name: Determine base version
-        id: base
-        run: |
-          # Pick the most recent non-prerelease tag and strip any -N revision
-          # suffix (e.g. v0.8.5-2 → 0.8.5). Falls back to 0.0.0 on a fresh repo.
-          LATEST_STABLE=$(git tag -l 'v*' --sort=-v:refname \
-            | grep -vE -- '-(nightly|alpha|beta|rc|dev)' \
-            | head -1)
-          if [ -z "$LATEST_STABLE" ]; then
-            BASE="0.0.0"
-          else
-            BASE="${LATEST_STABLE#v}"
-            BASE="${BASE%%-*}"
-          fi
-          echo "base=$BASE" >> "$GITHUB_OUTPUT"
-          echo "Base version: $BASE"
-
       - name: Compute nightly tag
         id: tag
         run: |
-          BASE="${{ steps.base.outputs.base }}"
-          STAMP=$(date -u +%Y%m%d.%H%M)
-          TAG="v${BASE}-nightly.${STAMP}"
-
-          # Defensive: if a tag already exists for this exact minute (rare
-          # race when two concurrent runs pass through here despite the
-          # concurrency group), append a short SHA suffix to disambiguate.
-          if git rev-parse "$TAG" >/dev/null 2>&1; then
-            TAG="${TAG}-$(git rev-parse --short HEAD)"
-          fi
-
+          DATE=$(date -u +%Y%m%d)
+          SHA=$(git rev-parse --short HEAD)
+          TAG="nightly-${DATE}-${SHA}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Nightly tag: $TAG"
 
