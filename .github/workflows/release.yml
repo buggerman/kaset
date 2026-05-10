@@ -436,7 +436,7 @@ jobs:
           git checkout -B appcast
 
           TAG="${{ steps.artifact.outputs.tag }}"
-          VERSION="${TAG#v}"
+          VERSION="${{ steps.version.outputs.version }}"
           SIGNATURE="${{ steps.sparkle_sign.outputs.signature }}"
           LENGTH="${{ steps.sparkle_sign.outputs.length }}"
 
