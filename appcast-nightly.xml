@@ -7,16 +7,16 @@
         <language>en</language>
 
         <item>
-            <title>Version nightly-20260510-00000014-b5428c3</title>
-            <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/nightly-20260510-00000014-b5428c3</sparkle:releaseNotesLink>
-            <pubDate>Sun, 10 May 2026 12:53:33 +0000</pubDate>
+            <title>Version nightly-20260510-015-f903835</title>
+            <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/nightly-20260510-015-f903835</sparkle:releaseNotesLink>
+            <pubDate>Sun, 10 May 2026 13:01:25 +0000</pubDate>
             <enclosure
-                url="https://github.com/buggerman/kaset/releases/download/nightly-20260510-00000014-b5428c3/kaset-nightly-20260510-00000014-b5428c3.dmg"
-                sparkle:version="24"
-                sparkle:shortVersionString="nightly-20260510-00000014-b5428c3"
-                length="8966477"
+                url="https://github.com/buggerman/kaset/releases/download/nightly-20260510-015-f903835/kaset-nightly-20260510-015-f903835.dmg"
+                sparkle:version="25"
+                sparkle:shortVersionString="nightly-20260510-015-f903835"
+                length="8966734"
                 type="application/octet-stream"
-                sparkle:edSignature="X9bfo+hSZOScoNUcL38WHH97wsHT55I7aBT5QGydyOx71O42OXL4qgFEGM+lXEYM386Fh4Oq6k58iz/Ei1pnBw=="/>
+                sparkle:edSignature="4Yz/wCgATpj8lCmYSFU7vOkwv32EUKEJTgzd63eqDYKPR1uCXXZf1MSyktfXbnJevDze1VqOibnzmCu4W5MHAg=="/>
             <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
         </item>
 
