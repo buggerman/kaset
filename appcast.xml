@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <channel>
+        <title>Kaset Updates</title>
+        <link>https://github.com/buggerman/kaset/releases</link>
+        <description>Most recent updates for Kaset, a native macOS YouTube Music client.</description>
+        <language>en</language>
+
+        <item>
+            <title>Version 0.9.0</title>
+            <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/v0.9.0</sparkle:releaseNotesLink>
+            <pubDate>Sat, 10 May 2026 11:25:11 +0000</pubDate>
+            <enclosure
+                url="https://github.com/buggerman/kaset/releases/download/v0.9.0/kaset-v0.9.0.dmg"
+                sparkle:version="18"
+                sparkle:shortVersionString="0.9.0"
+                length="8966548"
+                type="application/octet-stream"
+                sparkle:edSignature="qaEn77QRIy1C6+3UsqDcXzJcwRhmxd76OfwSA02UuL2J44yLp7Ts6xFg00Y//2X7j6mtnwezGUvGr3U7kfVMBQ=="/>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+        </item>
+
+    </channel>
+</rss>
