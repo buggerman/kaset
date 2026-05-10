@@ -53,11 +53,24 @@ jobs:
         id: tag
         run: |
           DATE=$(date -u +%Y%m%d)
-          BUILD=$(printf '%08d' "${{ github.run_number }}")
           SHA=$(git rev-parse --short HEAD)
-          # Embed an 8-digit, zero-padded build number between the date and
-          # the commit so tags sort chronologically even within the same UTC
-          # day (raw SHAs don't sort meaningfully).
+
+          # 3-digit per-day build counter: scan today's surviving nightly
+          # tags, take the highest existing build number, and add one.
+          # Falls back to 001 on the first build of a new UTC day. The
+          # `release.yml` prune step deletes older nightlies, so usually
+          # only the most recent today-tag (if any) is visible here.
+          LAST=$(git tag -l "nightly-${DATE}-*" \
+            | grep -E "^nightly-${DATE}-[0-9]+-" \
+            | sort -t- -k3 -n -r \
+            | head -1)
+          if [ -n "$LAST" ]; then
+            PREV=$(echo "$LAST" | sed -E "s/^nightly-${DATE}-([0-9]+)-.*$/\1/")
+            BUILD=$(printf '%03d' $((10#$PREV + 1)))
+          else
+            BUILD=001
+          fi
+
           TAG="nightly-${DATE}-${BUILD}-${SHA}"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Nightly tag: $TAG"
