@@ -19,7 +19,7 @@ enum UpdateChannel: String, CaseIterable {
         case .stable:
             nil // uses SUFeedURL from Info.plist
         case .nightly:
-            URL(string: "https://raw.githubusercontent.com/buggerman/kaset/main/appcast-nightly.xml")
+            URL(string: "https://raw.githubusercontent.com/buggerman/kaset/appcast/appcast-nightly.xml")
         }
     }
 }

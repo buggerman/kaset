@@ -287,7 +287,7 @@ ${APP_LOCALIZATIONS_PLIST}
 
     <!-- Sparkle Auto-Update Configuration -->
     <key>SUFeedURL</key>
-    <string>https://raw.githubusercontent.com/buggerman/kaset/main/appcast.xml</string>
+    <string>https://raw.githubusercontent.com/buggerman/kaset/appcast/appcast.xml</string>
     <key>SUPublicEDKey</key>
     <string>ctwRLeUWZTAaE+0UoxePHJZKBXmA53wQfbLFVuV+rPo=</string>
     <key>SUEnableAutomaticChecks</key>

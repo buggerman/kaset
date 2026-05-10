@@ -399,15 +399,24 @@ jobs:
           git push origin main
 
       - name: Update Appcast
+        # Appcasts live on the unprotected `appcast` branch (see docs/FORK.md).
+        # main is protected and rejects token pushes, so we publish feeds to
+        # a dedicated branch instead. App-side URLs point at raw.githubusercontent
+        # of the appcast branch.
         if: steps.sparkle_sign.outputs.signature != ''
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TAG_PUSH_TOKEN || secrets.GITHUB_TOKEN }}
         run: |
-          # Fetch and checkout the default branch (we're in detached HEAD from tag checkout)
-          git fetch origin ${{ github.event.repository.default_branch }}
-          git checkout ${{ github.event.repository.default_branch }}
-          # Use PAT so the push can bypass branch protection on main
+          set -eo pipefail
+
+          # Stage in a separate worktree so we don't disturb the tag checkout.
+          APPCAST_DIR="$RUNNER_TEMP/appcast-branch"
+          rm -rf "$APPCAST_DIR"
           git remote set-url origin https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git
+          git fetch origin appcast
+          git worktree add "$APPCAST_DIR" origin/appcast
+          cd "$APPCAST_DIR"
+          git checkout -B appcast
 
           TAG="${{ steps.artifact.outputs.tag }}"
           VERSION="${TAG#v}"
@@ -459,7 +468,7 @@ jobs:
 
           git add "${APPCAST_FILE}"
           git diff --cached --quiet || git commit -m "Update ${APPCAST_FILE} to ${TAG}"
-          git push origin ${{ github.event.repository.default_branch }}
+          git push origin appcast
 
       - name: Prune older nightly releases
         # Only keep the just-published nightly. Older nightlies + their tags
