@@ -127,6 +127,38 @@ struct PlayerServiceQueueTests {
         #expect(self.playerService.queueEntryIDs[safe: self.playerService.currentIndex] == currentEntryID)
     }
 
+    @Test("Toggle shuffle materializes queue with current track first")
+    func toggleShuffleMaterializesQueueWithCurrentTrackFirst() async {
+        let songs = TestFixtures.makeSongs(count: 5)
+        await self.playerService.playQueue(songs, startingAt: 3)
+
+        self.playerService.toggleShuffle()
+
+        #expect(self.playerService.shuffleEnabled == true)
+        #expect(self.playerService.currentIndex == 0)
+        #expect(self.playerService.queue.first?.videoId == "video-3")
+        #expect(self.playerService.currentTrack?.videoId == "video-3")
+        #expect(Set(self.playerService.queue.map(\.videoId)) == Set(songs.map(\.videoId)))
+    }
+
+    @Test("Toggle shuffle off restores original queue order")
+    func toggleShuffleOffRestoresOriginalQueueOrder() async {
+        let songs = TestFixtures.makeSongs(count: 5)
+        let originalVideoIds = songs.map(\.videoId)
+        await self.playerService.playQueue(songs, startingAt: 3)
+
+        self.playerService.toggleShuffle()
+        #expect(self.playerService.shuffleEnabled == true)
+        #expect(self.playerService.queue.first?.videoId == "video-3")
+
+        self.playerService.toggleShuffle()
+
+        #expect(self.playerService.shuffleEnabled == false)
+        #expect(self.playerService.queue.map(\.videoId) == originalVideoIds)
+        #expect(self.playerService.currentIndex == 3)
+        #expect(self.playerService.currentTrack?.videoId == "video-3")
+    }
+
     // MARK: - Undo/Redo Tests
 
     @Test("Undo restores previous queue state")
@@ -328,7 +360,7 @@ struct PlayerServiceQueueTests {
         #expect(newService.pendingPlayVideoId == duplicateSong.videoId)
     }
 
-    @Test("Resume on a restored session reveals the mini player before loading playback")
+    @Test("Resume on a restored session loads through the hidden persistent player")
     func resumeDeferredRestoredSession() async {
         // Arrange
         let songs = TestFixtures.makeSongs(count: 2)
@@ -345,8 +377,8 @@ struct PlayerServiceQueueTests {
         // Assert
         #expect(self.playerService.pendingPlayVideoId == songs[1].videoId)
         #expect(self.playerService.progress == 42)
-        #expect(self.playerService.state == .paused)
-        #expect(self.playerService.showMiniPlayer == true)
+        #expect(self.playerService.state == .loading)
+        #expect(self.playerService.showMiniPlayer == false)
         #expect(self.playerService.shouldAutoloadPendingVideo == true)
     }
 

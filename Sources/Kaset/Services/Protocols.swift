@@ -49,6 +49,15 @@ protocol YTMusicClientProtocol: Sendable {
     /// Whether more home sections are available to load.
     var hasMoreHomeSections: Bool { get }
 
+    /// Fetches signed-in, account-backed recommendations from the YouTube Music home feed.
+    func getPersonalizedRecommendations() async throws -> HomeResponse
+
+    /// Fetches the next batch of signed-in recommendation sections.
+    func getPersonalizedRecommendationsContinuation() async throws -> [HomeSection]?
+
+    /// Whether more signed-in recommendation sections are available to load.
+    var hasMorePersonalizedRecommendationSections: Bool { get }
+
     /// Fetches the explore page content (initial sections only for fast display).
     func getExplore() async throws -> HomeResponse
 
@@ -94,6 +103,15 @@ protocol YTMusicClientProtocol: Sendable {
     /// Whether more history sections are available to load.
     var hasMoreHistorySections: Bool { get }
 
+    /// Fetches the podcasts page content (initial sections only for fast display).
+    func getPodcasts() async throws -> [PodcastSection]
+
+    /// Fetches the next batch of podcasts sections via continuation.
+    func getPodcastsContinuation() async throws -> [PodcastSection]?
+
+    /// Whether more podcasts sections are available to load.
+    var hasMorePodcastsSections: Bool { get }
+
     /// Fetches details for a podcast show including its episodes.
     func getPodcastShow(browseId: String) async throws -> PodcastShowDetail
 
@@ -127,8 +145,7 @@ protocol YTMusicClientProtocol: Sendable {
     /// Searches for podcasts only (podcast shows).
     func searchPodcasts(query: String) async throws -> SearchResponse
 
-    /// Searches for podcast episodes only — including live-radio episodes,
-    /// which YouTube Music classifies under `MUSIC_VIDEO_TYPE_PODCAST_EPISODE`.
+    /// Searches for podcast episodes.
     func searchEpisodes(query: String) async throws -> SearchResponse
 
     /// Fetches the next batch of search results via continuation.
@@ -170,12 +187,8 @@ protocol YTMusicClientProtocol: Sendable {
     /// This returns all tracks in a single request, which is more reliable for radio playlists.
     func getPlaylistAllTracks(playlistId: String) async throws -> [Song]
 
-    /// Fetches the next batch of playlist tracks via continuation.
-    /// Returns nil if no more tracks are available.
-    func getPlaylistContinuation() async throws -> PlaylistContinuationResponse?
-
-    /// Whether more playlist tracks are available to load.
-    var hasMorePlaylistTracks: Bool { get }
+    /// Fetches a batch of playlist tracks using the provided continuation token.
+    func getPlaylistContinuation(token: String) async throws -> PlaylistContinuationResponse
 
     /// Fetches artist details including their songs and albums.
     func getArtist(id: String) async throws -> ArtistDetail
@@ -202,6 +215,23 @@ protocol YTMusicClientProtocol: Sendable {
 
     /// Adds a playlist to the user's library.
     func subscribeToPlaylist(playlistId: String) async throws
+
+    /// Permanently deletes one of the user's own playlists.
+    func deletePlaylist(playlistId: String) async throws
+
+    /// Fetches the user's playlists that can receive the provided song.
+    func getAddToPlaylistOptions(videoId: String) async throws -> AddToPlaylistMenu
+
+    /// Adds a song to an existing playlist.
+    func addSongToPlaylist(videoId: String, playlistId: String, allowDuplicate: Bool) async throws
+
+    /// Creates a playlist and optionally seeds it with songs.
+    func createPlaylist(
+        title: String,
+        description: String?,
+        privacyStatus: PlaylistPrivacyStatus,
+        videoIds: [String]
+    ) async throws -> String
 
     /// Removes a playlist from the user's library.
     func unsubscribeFromPlaylist(playlistId: String) async throws
@@ -406,7 +436,7 @@ protocol PlayerServiceProtocol: AnyObject, Sendable {
 
     // MARK: - State Updates
 
-    /// Called when the mini player confirms playback has started.
+    /// Records that the WebView observer has confirmed playback has started.
     func confirmPlaybackStarted()
 
     /// Called when the mini player is dismissed.

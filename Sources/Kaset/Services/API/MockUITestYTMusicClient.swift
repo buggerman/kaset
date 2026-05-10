@@ -10,6 +10,10 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
         false
     }
 
+    var hasMorePersonalizedRecommendationSections: Bool {
+        false
+    }
+
     var hasMoreExploreSections: Bool {
         false
     }
@@ -26,15 +30,15 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
         false
     }
 
+    var hasMorePodcastsSections: Bool {
+        false
+    }
+
     var hasMoreHistorySections: Bool {
         false
     }
 
     var hasMoreLikedSongs: Bool {
-        false
-    }
-
-    var hasMorePlaylistTracks: Bool {
         false
     }
 
@@ -64,6 +68,15 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
     }
 
     func getHomeContinuation() async throws -> [HomeSection]? {
+        nil
+    }
+
+    func getPersonalizedRecommendations() async throws -> HomeResponse {
+        try? await Task.sleep(for: .milliseconds(100))
+        return HomeResponse(sections: self.homeSections)
+    }
+
+    func getPersonalizedRecommendationsContinuation() async throws -> [HomeSection]? {
         nil
     }
 
@@ -109,6 +122,18 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
     }
 
     func getHistoryContinuation() async throws -> [HomeSection]? {
+        nil
+    }
+
+    func getPodcasts() async throws -> [PodcastSection] {
+        try? await Task.sleep(for: .milliseconds(100))
+        if UITestConfig.environmentValue(for: UITestConfig.mockPodcastsRegionUnavailableKey) == "true" {
+            throw YTMusicError.apiError(message: "HTTP 404", code: 404)
+        }
+        return []
+    }
+
+    func getPodcastsContinuation() async throws -> [PodcastSection]? {
         nil
     }
 
@@ -290,8 +315,8 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
         return PlaylistTracksResponse(detail: detail, continuationToken: nil)
     }
 
-    func getPlaylistContinuation() async throws -> PlaylistContinuationResponse? {
-        nil
+    func getPlaylistContinuation(token _: String) async throws -> PlaylistContinuationResponse {
+        PlaylistContinuationResponse(tracks: [], continuationToken: nil)
     }
 
     func getPlaylistAllTracks(playlistId _: String) async throws -> [Song] {
@@ -340,6 +365,40 @@ final class MockUITestYTMusicClient: YTMusicClientProtocol {
     }
 
     func subscribeToPlaylist(playlistId _: String) async throws {
+        // No-op for UI tests
+    }
+
+    func deletePlaylist(playlistId _: String) async throws {
+        // No-op for UI tests
+    }
+
+    func getAddToPlaylistOptions(videoId _: String) async throws -> AddToPlaylistMenu {
+        AddToPlaylistMenu(
+            title: "Add to playlist",
+            options: self.playlists.map { playlist in
+                AddToPlaylistOption(
+                    playlistId: playlist.id,
+                    title: playlist.title,
+                    subtitle: playlist.author?.name,
+                    thumbnailURL: playlist.thumbnailURL,
+                    isSelected: false,
+                    privacyStatus: nil
+                )
+            },
+            canCreatePlaylist: false
+        )
+    }
+
+    func createPlaylist(
+        title _: String,
+        description _: String?,
+        privacyStatus _: PlaylistPrivacyStatus,
+        videoIds _: [String]
+    ) async throws -> String {
+        "PLMOCKCREATED"
+    }
+
+    func addSongToPlaylist(videoId _: String, playlistId _: String, allowDuplicate _: Bool) async throws {
         // No-op for UI tests
     }
 
