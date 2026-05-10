@@ -8,6 +8,7 @@ on:
   push:
     tags:
       - "v*"
+      - "nightly-*"
   workflow_dispatch:
     inputs:
       tag:
@@ -71,7 +72,23 @@ jobs:
           else
             TAG="0.0.0"
           fi
-          VERSION="${TAG#v}"  # Remove 'v' prefix if present
+
+          if [[ "$TAG" =~ ^nightly- ]]; then
+            # Tag format: nightly-YYYYMMDD-<sha>
+            # Derive a CFBundleShortVersionString from the most recent stable
+            # tag plus the nightly suffix so the version string is sortable
+            # and visibly identifies a nightly build.
+            LAST_STABLE=$(git tag -l 'v*' --sort=-v:refname \
+              | grep -vE -- '-(alpha|beta|rc|dev|nightly)' \
+              | head -1)
+            BASE="${LAST_STABLE#v}"
+            BASE="${BASE:-0.0.0}"
+            SUFFIX="${TAG#nightly-}"  # YYYYMMDD-<sha>
+            VERSION="${BASE}-nightly.${SUFFIX}"
+          else
+            VERSION="${TAG#v}"  # Remove 'v' prefix if present
+          fi
+
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "Using version: $VERSION"
 
