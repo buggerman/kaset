@@ -6,5 +6,19 @@
         <description>Most recent nightly builds of Kaset.</description>
         <language>en</language>
 
+        <item>
+            <title>Version nightly-20260510-3cac14d</title>
+            <sparkle:releaseNotesLink>https://github.com/buggerman/kaset/releases/tag/nightly-20260510-3cac14d</sparkle:releaseNotesLink>
+            <pubDate>Sun, 10 May 2026 12:25:40 +0000</pubDate>
+            <enclosure
+                url="https://github.com/buggerman/kaset/releases/download/nightly-20260510-3cac14d/kaset-nightly-20260510-3cac14d.dmg"
+                sparkle:version="21"
+                sparkle:shortVersionString="nightly-20260510-3cac14d"
+                length="8966884"
+                type="application/octet-stream"
+                sparkle:edSignature="otyYOeO0KN0/g9Nx4H0y1uzlFlbBMi/Q1kBAO13+LI8r7MtCpsMgmFes3VPm1roJ6dcsZTJjHvcckLTrrbYCCQ=="/>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+        </item>
+
     </channel>
 </rss>
